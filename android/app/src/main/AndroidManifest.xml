@@ -25,6 +25,9 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="myapp"/>
+        <data android:scheme="exp+my-app"/>
+        <data android:scheme="vosnap"/>
+        <data android:scheme="exp+vosnap"/>
       </intent-filter>
     </activity>
   </application>
