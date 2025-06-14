@@ -1,7 +1,8 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import * as MediaLibrary from 'expo-media-library';
 import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
+
+import * as ImagePicker from 'expo-image-picker';
 const DATA = [
   {
     id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
@@ -27,26 +28,24 @@ const Item = ({ title }: ItemProps) => (
 );
 
 export default function Index() {
-  const [albums, setAlbums] = useState<MediaLibrary.Album[] | null>(null);
-  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
-
-  async function getAlbums() {
-    if (permissionResponse?.status !== 'granted') {
-      await requestPermission();
-    }
-    const fetchedAlbums = await MediaLibrary.getAlbumsAsync({
-      includeSmartAlbums: true,
+  const [image, setImage] = useState<string | null>(null);
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      quality: 1,
     });
 
-    console.log(fetchedAlbums);
-    setAlbums(fetchedAlbums);
-  }
+    console.log("result", result);
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
 
 
   const handleUpload = () => {
-    console.log('Upload');
-
-    getAlbums();
+    pickImage();
   };
 
   return (
@@ -61,6 +60,8 @@ export default function Index() {
       <Button title="打开设置 ➜ 控制中心" onPress={() => {
         Linking.openURL('App-prefs:root=ControlCenter');
       }} /> */}
+
+      {image && <Image source={{ uri: image }} style={styles.image} />}
 
       <View style={styles.buttonContainer}>
         <Pressable style={styles.button} onPress={handleUpload}>
@@ -113,5 +114,10 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 4,
     backgroundColor: '#25292e',
+  },
+  image: {
+    width: 200,
+    height: 200,
+    borderRadius: 10,
   },
 });
