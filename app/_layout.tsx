@@ -3,6 +3,8 @@ import React from "react";
 
 export default function RootLayout() {
   return (
-    <Stack />
+    <Stack>
+      <Stack.Screen name="index" options={{ title: 'VoSnap' }} />
+    </Stack>
   );
 }
