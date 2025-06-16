@@ -1,8 +1,11 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { AutomaticSpeechRecognitionPipeline, pipeline } from '@xenova/transformers';
+import { Audio } from 'expo-av';
+import { useEffect, useState } from 'react';
+import { Button, FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import * as ImagePicker from 'expo-image-picker';
+
 const DATA = [
   {
     id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
@@ -48,6 +51,84 @@ export default function Index() {
     pickImage();
   };
 
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isModelLoaded, setIsModelLoaded] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [audioPermission, setAudioPermission] = useState(false);
+  const [transcriber, setTranscriber] = useState<AutomaticSpeechRecognitionPipeline | null>(null);
+
+  useEffect(() => {
+    const loadTranscriber = async () => {
+      try {
+        // 使用transformers.js加载轻量级的whisper模型
+        const transcriber = await pipeline(
+          'automatic-speech-recognition',
+          'Xenova/whisper-tiny.en'
+        );
+        setIsModelLoaded(true);
+        setTranscriber(transcriber);
+      } catch (error) {
+        console.error('Failed to load transcriber:', error);
+      }
+    };
+
+    loadTranscriber();
+    requestPermissions();
+  }, []);
+
+  // 请求录音权限
+  const requestPermissions = async () => {
+    const { status } = await Audio.requestPermissionsAsync();
+    setAudioPermission(status === 'granted');
+  };
+
+  // 开始录音
+  const startRecording = async () => {
+    if (!audioPermission || isRecording || isProcessing) return;
+
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  };
+
+  // 停止录音并开始转录
+  const stopRecording = async () => {
+    if (!recording || !isRecording) return;
+
+    setIsRecording(false);
+    setIsProcessing(true);
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+
+    try {
+      // 使用加载的模型进行转录
+      if (transcriber) {
+        const result = await transcriber(uri as any);
+        setTranscript(result.text as string);
+      } else {
+        console.error('Transcriber not loaded');
+      }
+    } catch (error) {
+      console.error('Error during transcription:', error);
+    } finally {
+      setIsProcessing(false);
+      setRecording(null);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* <Text style={styles.title}>🎥 如何开始录屏</Text>
@@ -60,6 +141,25 @@ export default function Index() {
       <Button title="打开设置 ➜ 控制中心" onPress={() => {
         Linking.openURL('App-prefs:root=ControlCenter');
       }} /> */}
+
+      {!audioPermission && (
+        <Text style={styles.error}>请授予录音权限</Text>
+      )}
+
+      {isProcessing ? (
+        <Text style={styles.processing}>正在处理音频...</Text>
+      ) : (
+        <Button
+          title={isRecording ? '停止录音' : '开始录音'}
+          onPress={isRecording ? stopRecording : startRecording}
+          disabled={!audioPermission || isProcessing}
+        />
+      )}
+
+      <View style={styles.transcriptBox}>
+        <Text style={styles.transcriptTitle}>识别结果:</Text>
+        <Text style={styles.transcriptText}>{transcript || '暂无内容'}</Text>
+      </View>
 
       {image && <Image source={{ uri: image }} style={styles.image} />}
 
@@ -119,5 +219,29 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 10,
+  },
+
+  error: {
+    color: 'red',
+    marginBottom: 10,
+  },
+  processing: {
+    marginBottom: 10,
+    fontStyle: 'italic',
+  },
+  transcriptBox: {
+    marginTop: 30,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  transcriptTitle: {
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  transcriptText: {
+    minHeight: 100,
   },
 });
