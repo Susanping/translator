@@ -2,7 +2,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { AutomaticSpeechRecognitionPipeline, pipeline } from '@xenova/transformers';
 import { Audio } from 'expo-av';
 import { useEffect, useState } from 'react';
-import { Button, FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Button, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
 
@@ -21,7 +21,6 @@ const DATA = [
   },
 ];
 
-
 type ItemProps = { title: string };
 
 const Item = ({ title }: ItemProps) => (
@@ -33,19 +32,17 @@ const Item = ({ title }: ItemProps) => (
 export default function Index() {
   const [image, setImage] = useState<string | null>(null);
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'],
       quality: 1,
     });
 
-    console.log("result", result);
+    console.log('result', result);
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
     }
   };
-
 
   const handleUpload = () => {
     pickImage();
@@ -63,10 +60,7 @@ export default function Index() {
     const loadTranscriber = async () => {
       try {
         // 使用transformers.js加载轻量级的whisper模型
-        const transcriber = await pipeline(
-          'automatic-speech-recognition',
-          'Xenova/whisper-tiny.en'
-        );
+        const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
         setIsModelLoaded(true);
         setTranscriber(transcriber);
       } catch (error) {
@@ -94,9 +88,7 @@ export default function Index() {
         playsInSilentModeIOS: true,
       });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
       setRecording(recording);
       setIsRecording(true);
     } catch (err) {
@@ -142,9 +134,7 @@ export default function Index() {
         Linking.openURL('App-prefs:root=ControlCenter');
       }} /> */}
 
-      {!audioPermission && (
-        <Text style={styles.error}>请授予录音权限</Text>
-      )}
+      {!audioPermission && <Text style={styles.error}>请授予录音权限</Text>}
 
       {isProcessing ? (
         <Text style={styles.processing}>正在处理音频...</Text>
@@ -170,15 +160,10 @@ export default function Index() {
         </Pressable>
       </View>
 
-      <FlatList
-        data={DATA}
-        renderItem={({ item }) => <Item title={item.title} />}
-        keyExtractor={item => item.id}
-      />
+      <FlatList data={DATA} renderItem={({ item }) => <Item title={item.title} />} keyExtractor={(item) => item.id} />
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -186,7 +171,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   text: {
     marginVertical: 10,
