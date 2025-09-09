@@ -1,23 +1,34 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { AutomaticSpeechRecognitionPipeline, pipeline } from '@xenova/transformers';
-import { Audio } from 'expo-av';
-import { useEffect, useState } from 'react';
-import { Button, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import {
+  AutomaticSpeechRecognitionPipeline,
+  pipeline,
+} from "@xenova/transformers";
+import { Audio } from "expo-av";
+import { useEffect, useState } from "react";
+import {
+  Button,
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from "expo-image-picker";
 
 const DATA = [
   {
-    id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-    title: 'First Item',
+    id: "bd7acbea-c1b1-46c2-aed5-3ad53abb28ba",
+    title: "First Item",
   },
   {
-    id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-    title: 'Second Item',
+    id: "3ac68afc-c605-48d3-a4f8-fbd91aa97f63",
+    title: "Second Item",
   },
   {
-    id: '58694a0f-3da1-471f-bd96-145571e29d72',
-    title: 'Third Item',
+    id: "58694a0f-3da1-471f-bd96-145571e29d72",
+    title: "Third Item",
   },
 ];
 
@@ -33,11 +44,11 @@ export default function Index() {
   const [image, setImage] = useState<string | null>(null);
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
+      mediaTypes: ["images", "videos"],
       quality: 1,
     });
 
-    console.log('result', result);
+    console.log("result", result);
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
@@ -50,32 +61,36 @@ export default function Index() {
 
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
-  const [transcript, setTranscript] = useState('');
+  const [transcript, setTranscript] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [audioPermission, setAudioPermission] = useState(false);
-  const [transcriber, setTranscriber] = useState<AutomaticSpeechRecognitionPipeline | null>(null);
+  const [transcriber, setTranscriber] =
+    useState<AutomaticSpeechRecognitionPipeline | null>(null);
 
   useEffect(() => {
     const loadTranscriber = async () => {
       try {
         // 使用transformers.js加载轻量级的whisper模型
-        const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+        const transcriber = await pipeline(
+          "automatic-speech-recognition",
+          "Xenova/whisper-tiny.en"
+        );
         setIsModelLoaded(true);
         setTranscriber(transcriber);
       } catch (error) {
-        console.error('Failed to load transcriber:', error);
+        console.error("Failed to load transcriber:", error);
       }
     };
 
-    loadTranscriber();
+    // loadTranscriber();
     requestPermissions();
   }, []);
 
   // 请求录音权限
   const requestPermissions = async () => {
     const { status } = await Audio.requestPermissionsAsync();
-    setAudioPermission(status === 'granted');
+    setAudioPermission(status === "granted");
   };
 
   // 开始录音
@@ -88,11 +103,13 @@ export default function Index() {
         playsInSilentModeIOS: true,
       });
 
-      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
       setRecording(recording);
       setIsRecording(true);
     } catch (err) {
-      console.error('Failed to start recording', err);
+      console.error("Failed to start recording", err);
     }
   };
 
@@ -111,10 +128,10 @@ export default function Index() {
         const result = await transcriber(uri as any);
         setTranscript(result.text as string);
       } else {
-        console.error('Transcriber not loaded');
+        console.error("Transcriber not loaded");
       }
     } catch (error) {
-      console.error('Error during transcription:', error);
+      console.error("Error during transcription:", error);
     } finally {
       setIsProcessing(false);
       setRecording(null);
@@ -140,7 +157,7 @@ export default function Index() {
         <Text style={styles.processing}>正在处理音频...</Text>
       ) : (
         <Button
-          title={isRecording ? '停止录音' : '开始录音'}
+          title={isRecording ? "停止录音" : "开始录音"}
           onPress={isRecording ? stopRecording : startRecording}
           disabled={!audioPermission || isProcessing}
         />
@@ -148,19 +165,28 @@ export default function Index() {
 
       <View style={styles.transcriptBox}>
         <Text style={styles.transcriptTitle}>识别结果:</Text>
-        <Text style={styles.transcriptText}>{transcript || '暂无内容'}</Text>
+        <Text style={styles.transcriptText}>{transcript || "暂无内容"}</Text>
       </View>
 
       {image && <Image source={{ uri: image }} style={styles.image} />}
 
       <View style={styles.buttonContainer}>
         <Pressable style={styles.button} onPress={handleUpload}>
-          <FontAwesome name="upload" size={24} color="white" style={styles.buttonIcon} />
+          <FontAwesome
+            name="upload"
+            size={24}
+            color="white"
+            style={styles.buttonIcon}
+          />
           <Text style={styles.buttonLabel}>Upload</Text>
         </Pressable>
       </View>
 
-      <FlatList data={DATA} renderItem={({ item }) => <Item title={item.title} />} keyExtractor={(item) => item.id} />
+      <FlatList
+        data={DATA}
+        renderItem={({ item }) => <Item title={item.title} />}
+        keyExtractor={(item) => item.id}
+      />
     </View>
   );
 }
@@ -171,7 +197,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   text: {
     marginVertical: 10,
@@ -182,23 +208,23 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 10,
     padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    backgroundColor: '#000',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    backgroundColor: "#000",
   },
   buttonIcon: {
     marginRight: 8,
   },
   buttonLabel: {
-    color: '#fff',
-    textAlign: 'center',
+    color: "#fff",
+    textAlign: "center",
   },
   item: {
     padding: 20,
     marginVertical: 8,
     borderRadius: 4,
-    backgroundColor: '#25292e',
+    backgroundColor: "#25292e",
   },
   image: {
     width: 200,
@@ -207,23 +233,23 @@ const styles = StyleSheet.create({
   },
 
   error: {
-    color: 'red',
+    color: "red",
     marginBottom: 10,
   },
   processing: {
     marginBottom: 10,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   transcriptBox: {
     marginTop: 30,
     padding: 15,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
   },
   transcriptTitle: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 5,
   },
   transcriptText: {
